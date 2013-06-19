@@ -1,0 +1,27 @@
+{
+  "name": "mantra",
+  "version": "0.0.0",
+  "title": "Mantra",
+  "description": "A javascript library for multi-touch UI components",
+  "main": "dist/mantra.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/madimp/mantra.git"
+  },
+  "keywords": [
+    "touch"
+  ],
+  "author": "Egor Dydykin <root@madimp.pro>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/madimp/mantra/issues"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib": "~0.7.0",
+    "grunt-closure-compiler": "0.0.18"
+  }
+}
