@@ -3,7 +3,7 @@
  * @const
  * @type {*|HTMLDocument}
  */
-var document = window.document;
+// var document = window.document;
 
 var Mantra = {};
 

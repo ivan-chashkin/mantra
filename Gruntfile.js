@@ -1,6 +1,5 @@
-module.exports = function(grunt) {
+module.exports = function (grunt) {
 
-	// Project configuration.
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 		concat: {
@@ -22,13 +21,26 @@ module.exports = function(grunt) {
 			}
 		},
 
+		clean: {
+			build: ['.build/*']
+		},
+
 		copy: {
 
 		},
 
+		jshint: {
+			all: [
+				'Gruntfile.js',
+				'src/**/*.js'
+			],
+			options: {
+				jshintrc: '.jshintrc'
+			}
+		},
+
 		'closure-compiler': {
 			build: {
-				closurePath: '/usr/local/Cellar/closure-compiler/20130411/libexec/',
 				js: '<%= concat.all.dest %>',
 				jsOutputFile: '.build/mantra.min.js',
 				maxBuffer: 500,
@@ -41,10 +53,13 @@ module.exports = function(grunt) {
 		}
 	});
 
-	grunt.loadNpmTasks('grunt-contrib');
+	grunt.loadNpmTasks('grunt-contrib-concat');
+	grunt.loadNpmTasks('grunt-contrib-clean');
+	grunt.loadNpmTasks('grunt-contrib-copy');
+	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-closure-compiler');
 
-	// Default task(s).
-	grunt.registerTask('default', ['concat:all', 'closure-compiler', 'concat:build']);
+	grunt.registerTask('test', ['jshint']);
+	grunt.registerTask('default', ['test', 'concat:all', 'clean:build', 'closure-compiler', 'concat:build']);
 
 };
