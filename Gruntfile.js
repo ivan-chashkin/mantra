@@ -10,11 +10,12 @@ module.exports = function (grunt) {
 				},
 				src: [
 					'src/Mantra.js',
+					'src/utils/define.js',
+					'src/utils/NodeStore.js',
 					'src/gestures/gestures.js',
 					'src/gestures/Dispecher.js',
 					'src/gestures/Gesture.js',
-					'src/gestures/Tap.js',
-					'src/core.js'
+					'src/gestures/Tap.js'
 				],
 				dest: '<%= pkg.main %>'
 			},
@@ -52,8 +53,8 @@ module.exports = function (grunt) {
 				options: {
 					compilation_level: 'ADVANCED_OPTIMIZATIONS',
 					//compilation_level: 'SIMPLE_OPTIMIZATIONS',
-					language_in: 'ECMASCRIPT5_STRICT',
-					formatting: 'PRETTY_PRINT'
+					formatting: 'PRETTY_PRINT',
+					language_in: 'ECMASCRIPT5_STRICT'
 				}
 			}
 		}

@@ -6,28 +6,23 @@ Mantra['define']('Mantra.gestures.Gesture',
 	 */
 	{
 
+		"singleton": true,
+		"abstract": true,
+
+		"name": null,
+
 		/**
 		 * @constructs
 		 */
 		constructor: function () {
-			this._x = 'x';
-			this._gesture = true;
-			console.log('Mantra.gestures.Gesture');
+			this["name"] && Mantra['gestures']['Dispecher']["register"](this);
 		},
-
-		"gesture": true,
-		_superprop: "superprop",
 
 		/**
 		 * @lends Mantra.gestures.Gesture
 		 */
-		statics: {
-			'staticMethod': function () {
-				console.log('staticMethod');
-			},
-			_staticMethod: function () {
-				console.log('_staticMethod');
-			}
+		"statics": {
+
 		}
 	}
 );

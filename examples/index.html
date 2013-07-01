@@ -3,11 +3,96 @@
 <head>
 	<title>MANTRA</title>
 	<script src="dist/mantra.min.js"></script>
+	<style>
+		.left-top {
+			position: absolute;
+			right: 40%;
+			top: 0;
+			left: 0;
+			bottom: 40%;
+			background: red;
+		}
+
+		.left-bottom {
+			position: absolute;
+			right: 40%;
+			top: 40%;
+			left: 0;
+			bottom: 0;
+			background: darkred;
+		}
+
+		.right {
+			position: absolute;
+			right: 0;
+			top: 0;
+			left: 40%;
+			bottom: 0;
+			background: indianred;
+		}
+
+		.list {
+			margin: 10px;
+			background: yellow;
+		}
+
+		.list > div {
+			margin: 5px;
+			background: yellowgreen;
+		}
+	</style>
 </head>
 <body>
-	<a href="#" id="asd">link</a>
+	<div id="left-top" class="left-top">
+		<div class="list">
+			<div>text text text text text text text text text text text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+		</div>
+	</div>
+	<div id="left-bottom" class="left-bottom">
+		<div class="list">
+			<div>text text text text text text text text text text text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+		</div>
+	</div>
+	<div id="right" class="right">
+		<div class="list">
+			<div>text text text text text text text text text text text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			<div>text text text text text text <a href="#">text text text text</a> text text </div>
+		</div>
+	</div>
 	<script>
+		var cb1 = function(e){
+			console.log('left-top', e);
+		};
 
+		var cb2 = function(e){
+			console.log('left-bottom', e);
+		};
+
+		var cb3 = function(e){
+			console.log('right', e);
+		};
+
+		Mantra.on("tap", document.getElementById('left-top'), cb1);
+		Mantra.on("tap", document.getElementById('left-bottom'), cb2);
+		Mantra.on("tap", document.getElementById('right'), cb3);
+		//Mantra.on("tap", document, cb);
 	</script>
 </body>
 </html>

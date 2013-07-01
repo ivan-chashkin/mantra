@@ -4,15 +4,19 @@ var Mantra = window['Mantra'] = {};
 /** @const */
 Mantra.DOCUMENT = window.document;
 
+
+
+/*global Mantra: true */
+
 /**
  * @param name
  * @param object
  */
 Mantra['define'] = function (name, object) {
 	var source = Mantra,
-		constructor = object.hasOwnProperty('constructor') && typeof object.constructor == 'function' ? object.constructor : false,
+		constructor = object.hasOwnProperty('constructor') && typeof object["constructor"] == 'function' ? object["constructor"] : false,
 		statics,
-		extend = typeof object.extend == 'string' ? Mantra['resolve'](object.extend) : object.extend;
+		extend = typeof object["extend"] == 'string' ? Mantra['resolve'](object["extend"]) : object["extend"];
 
 	if (constructor) {
 		var prototype,
@@ -28,9 +32,9 @@ Mantra['define'] = function (name, object) {
 			/* TODO: static names ['prop'] for constructor, superconstructor, superclass */
 			F.prototype = extend.prototype;
 			constructor.prototype = new F();
-			constructor.prototype.constructor = constructor;
-			constructor.prototype.superconstructor = extend;
-			constructor.prototype.superclass = extend.prototype;
+			constructor.prototype["constructor"] = constructor;
+			constructor.prototype["superconstructor"] = extend;
+			constructor.prototype["superclass"] = extend.prototype;
 		}
 
 		prototype = constructor.prototype;
@@ -39,6 +43,10 @@ Mantra['define'] = function (name, object) {
 			if (object.hasOwnProperty(objectProp) && objectProp != 'constructor' && objectProp != 'statics') {
 				prototype[objectProp] = object[objectProp];
 			}
+		}
+
+		if (constructor.prototype["singleton"] && !constructor.prototype.hasOwnProperty("abstract")) {
+			constructor = new constructor();
 		}
 	}
 
@@ -64,7 +72,7 @@ Mantra['define'] = function (name, object) {
 	}
 	//}
 
-	statics = constructor ? object.statics : object;
+	statics = constructor ? object["statics"] : object;
 	if (statics) {
 		for (var staticProp in statics) {
 			if (statics.hasOwnProperty(staticProp)) {
@@ -99,6 +107,79 @@ Mantra['resolve'] = function (name) {
 	return object;
 };
 
+Mantra["relayMethod"] = function (target, source, method) {
+	if (method) {
+		target[method] = source[method].bind(source);
+
+	} else {
+		for (method in source) {
+			if (source.hasOwnProperty(method) && typeof source[method] == 'function') {
+				Mantra["relayMethod"](target, source, method);
+			}
+		}
+
+	}
+};
+
+/*global Mantra: true */
+
+Mantra["define"]("Mantra.utils.NodeStore",
+	/**
+	 * @lends Mantra.utils.NodeStore.prototype
+	 */
+	{
+		constructor: function (target, id) {
+			this["target"] = target;
+			this["id"] = id;
+			this._store = {};
+		},
+
+		"get": function (name) {
+			return this._store[name];
+		},
+
+		"set": function (name, value) {
+			this._store[name] = value;
+			return value;
+		},
+
+		"remove": function (name) {
+			var value = this["get"](name);
+			delete this._store[name];
+			return value;
+		},
+
+		/**
+		 * @lends Mantra.utils.NodeStore
+		 */
+		"statics": {
+			_stores: {},
+			_targetsIds: {},
+			_id: 0,
+
+			"getStore": function (target) {
+				var id = target["_mid"],
+					store;
+
+				if (id === void 0) {
+					target["_mid"] = id = this._id++;
+					this._targetsIds[id] = target;
+				}
+
+				store = this._stores[id];
+
+				if (!store) {
+					store = this._stores[id] = new Mantra["utils"]["NodeStore"](target, id);
+				}
+
+				return store;
+			}
+		}
+	}
+);
+
+Mantra["relayMethod"](Mantra, Mantra["utils"]["NodeStore"], "getStore");
+
 /*global Mantra: true */
 
 Mantra['define']('Mantra.gestures', {
@@ -131,24 +212,104 @@ Mantra['define']('Mantra.gestures.Dispecher',
 	 * @lends Mantra.gestures.Dispecher.prototype
 	 */
 	{
+		"singleton": true,
+
 		/**
 		 * @constructs
 		 */
 		constructor: function () {
-
+			this._detect = this._detect.bind(this);
 		},
 
 		_gestures: {},
 
+		_gestureListeners: 0,
+
 		/**
-		 * @param name
 		 * @param gesture
 		 */
-		"register": function (name, gesture) {
-			this._gestures[name] = gesture;
+		"register": function (gesture) {
+			if (!(gesture instanceof Mantra['gestures']["Gesture"])) {
+				if (typeof gesture == 'string') {
+					gesture = Mantra["resolve"](gesture);
+				}
+				gesture = new gesture();
+			}
+
+			this._gestures[gesture["name"]] = {
+				"gesture": gesture,
+				listeners: 0
+			};
+		},
+
+		"on": function (gestureName, target, fn) {
+			if (!this._gestures[gestureName]) {
+				return;
+			}
+
+			var store = Mantra["getStore"](target),
+				gestureListeners;
+
+			gestureListeners = store["get"](gestureName) || (store["set"](gestureName, []));
+			gestureListeners.push(fn);
+
+			this._gestureListeners++;
+			this._gestures[gestureName].listeners++;
+
+			if (this._gestureListeners == 1) {
+				this._bind();
+			}
+		},
+
+		"off": function (gestureName, target, fn) {
+			if (!this._gestures[gestureName]) {
+				return;
+			}
+
+			var store = Mantra["getStore"](target),
+				gestureListeners;
+
+			gestureListeners = store["get"](gestureName);
+
+			var index = gestureListeners.indexOf(fn);
+
+			if (index > -1) {
+				store["set"](gestureName, gestureListeners.splice(index, 1));
+
+				this._gestureListeners--;
+				this._gestures[gestureName].listeners--;
+
+				if (this._gestureListeners === 0) {
+					this._unbind();
+				}
+			}
+		},
+
+		_bind: function () {
+			Mantra.DOCUMENT.addEventListener('touchstart',  this._detect, false);
+		},
+
+		_unbind: function () {
+			Mantra.DOCUMENT.removeEventListener('touchstart',  this._detect, false);
+		},
+
+		_detect: function (e) {
+			console.log(e);
+		},
+
+		/**
+		 * @lends Mantra.gestures.Dispecher
+		 */
+		"statics": {
+
 		}
 	}
 );
+
+Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispecher'], "on");
+Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispecher'], "off");
+Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispecher'], "register");
+
 
 /*global Mantra: true */
 
@@ -158,28 +319,23 @@ Mantra['define']('Mantra.gestures.Gesture',
 	 */
 	{
 
+		"singleton": true,
+		"abstract": true,
+
+		"name": null,
+
 		/**
 		 * @constructs
 		 */
 		constructor: function () {
-			this._x = 'x';
-			this._gesture = true;
-			console.log('Mantra.gestures.Gesture');
+			this["name"] && Mantra['gestures']['Dispecher']["register"](this);
 		},
-
-		"gesture": true,
-		_superprop: "superprop",
 
 		/**
 		 * @lends Mantra.gestures.Gesture
 		 */
-		statics: {
-			'staticMethod': function () {
-				console.log('staticMethod');
-			},
-			_staticMethod: function () {
-				console.log('_staticMethod');
-			}
+		"statics": {
+
 		}
 	}
 );
@@ -191,38 +347,17 @@ Mantra['define']('Mantra.gestures.Tap',
 	 * @lends Mantra.gestures.Tap.prototype
 	 */
 	{
+		"extend": 'Mantra.gestures.Gesture',
 
-		extend: 'Mantra.gestures.Gesture',
+		"name": "tap",
 
 		/**
 		 * @constructs
 		 */
 		constructor: function () {
-			this.superconstructor.apply(this);
+			this["superconstructor"].apply(this);
+		}
 
-			this._superprop = 'this';
-			console.log('this.superclass._superprop', this.superclass._superprop);
-			console.log('this.constructor.prototype._superprop', this.constructor.prototype._superprop);
-			console.log('this._superprop', this._superprop);
-
-			console.log('this._gesture', this._gesture);
-
-			this._tap = true;
-			console.log('Mantra.gestures.Tap');
-		},
-
-		_superprop: "_superpropTapProto",
-
-		"tap": true
 	}
 );
-
-/*global Mantra: true */
-
-Mantra['gestures']['dispecher'] = new Mantra['gestures']['Dispecher']();
-var tap = new Mantra['gestures']['Tap']();
-console.log(tap["tap"], tap._tap, tap['gesture'], tap._gesture);
-Mantra['gestures']["Gesture"]['staticMethod']();
-Mantra['gestures']["Gesture"]._staticMethod();
-console.log(Mantra['gestures'].POINTER_PEN);
 }).call(this, window);
