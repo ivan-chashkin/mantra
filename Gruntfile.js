@@ -3,13 +3,18 @@ module.exports = function (grunt) {
 	grunt.initConfig({
 		pkg: grunt.file.readJSON('package.json'),
 		concat: {
-			options: {
-				banner: '"use strict";(function(window){',
-				footer: '}).call(this, window);'
-			},
 			all: {
+				options: {
+					banner: '"use strict";(function(window){',
+					footer: '}).call(this, window);'
+				},
 				src: [
-					'src/mantra.js'
+					'src/Mantra.js',
+					'src/gestures/gestures.js',
+					'src/gestures/Dispecher.js',
+					'src/gestures/Gesture.js',
+					'src/gestures/Tap.js',
+					'src/core.js'
 				],
 				dest: '<%= pkg.main %>'
 			},
@@ -46,6 +51,7 @@ module.exports = function (grunt) {
 				maxBuffer: 500,
 				options: {
 					compilation_level: 'ADVANCED_OPTIMIZATIONS',
+					//compilation_level: 'SIMPLE_OPTIMIZATIONS',
 					language_in: 'ECMASCRIPT5_STRICT',
 					formatting: 'PRETTY_PRINT'
 				}
