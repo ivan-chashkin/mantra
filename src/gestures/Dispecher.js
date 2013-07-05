@@ -12,11 +12,38 @@ Mantra['define']('Mantra.gestures.Dispecher',
 		 */
 		constructor: function () {
 			this._detect = this._detect.bind(this);
+			this._determineEventTypes();
 		},
 
 		_gestures: {},
 
 		_gestureListeners: 0,
+
+		_determineEventTypes: function () {
+			var types = {};
+
+			if (Mantra.HAS_TOUCHEVENTS) {
+				if (Mantra.NO_MOUSEEVENTS) {
+					/** @const */
+					types[Mantra.EVENT_START] = 'touchstart';
+					/** @const */
+					types[Mantra.EVENT_MOVE] = 'touchmove';
+					/** @const */
+					types[Mantra.EVENT_END] = 'touchend touchcancel';
+
+				} else {
+					/** @const */
+					types[Mantra.EVENT_START] = 'touchstart mousedown';
+					/** @const */
+					types[Mantra.EVENT_MOVE] = 'touchmove mousemove';
+					/** @const */
+					types[Mantra.EVENT_END] = 'touchend touchcancel mouseup';
+				}
+			}
+			// TODO: pointer events
+
+			Mantra.EVENT_TYPES = types;
+		},
 
 		/**
 		 * @param gesture
@@ -49,8 +76,16 @@ Mantra['define']('Mantra.gestures.Dispecher',
 			this._gestureListeners++;
 			this._gestures[gestureName].listeners++;
 
+
+			var startedTarget = store["get"]("detecting") || 0;
+			store["set"]("detecting", startedTarget++);
+
+			if (startedTarget == 1) {
+				this._bind(Mantra.EVENT_TYPES[Mantra.EVENT_START], target);
+			}
+
 			if (this._gestureListeners == 1) {
-				this._bind();
+				this._bind(Mantra.EVENT_TYPES[Mantra.EVENT_MOVE] + ' ' + Mantra.EVENT_START[Mantra.EVENT_END]);
 			}
 		},
 
@@ -72,22 +107,44 @@ Mantra['define']('Mantra.gestures.Dispecher',
 				this._gestureListeners--;
 				this._gestures[gestureName].listeners--;
 
+				var startedTarget = store["get"]("detecting");
+
+				store["set"]("detecting", startedTarget--);
+
+				if (!startedTarget) {
+					this._unbind(Mantra.EVENT_TYPES[Mantra.EVENT_START], target);
+				}
+
 				if (this._gestureListeners === 0) {
-					this._unbind();
+					this._unbind(Mantra.EVENT_TYPES[Mantra.EVENT_MOVE] + ' ' + Mantra.EVENT_START[Mantra.EVENT_END]);
 				}
 			}
 		},
 
-		_bind: function () {
-			Mantra.DOCUMENT.addEventListener('touchstart',  this._detect, false);
+		_bind: function (events, target) {
+			var i, l;
+
+			events = events.split(' ');
+			target || (target = Mantra.DOCUMENT);
+
+			for (i = 0, l = events.length; i < l; i++) {
+				target.addEventListener(events[i],  this._detect, false);
+			}
 		},
 
-		_unbind: function () {
-			Mantra.DOCUMENT.removeEventListener('touchstart',  this._detect, false);
+		_unbind: function (events, target) {
+			var i, l;
+
+			events = events.split(' ');
+			target || (target = Mantra.DOCUMENT);
+
+			for (i = 0, l = events.length; i < l; i++) {
+				target.removeEventListener(events[i],  this._detect, false);
+			}
 		},
 
 		_detect: function (e) {
-			console.log(e);
+			console.log(e.type);
 		},
 
 		/**

@@ -5,6 +5,7 @@
  * @param object
  */
 Mantra['define'] = function (name, object) {
+	object || (object = {});
 	var source = Mantra,
 		constructor = object.hasOwnProperty('constructor') && typeof object["constructor"] == 'function' ? object["constructor"] : false,
 		statics,
