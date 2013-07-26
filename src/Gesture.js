@@ -1,8 +1,8 @@
 /*global Mantra: true */
 
-Mantra['define']('Mantra.gestures.Gesture',
+Mantra['define']('Mantra.Gesture',
 	/**
-	 * @lends Mantra.gestures.Gesture.prototype
+	 * @lends Mantra.Gesture.prototype
 	 */
 	{
 
@@ -15,7 +15,7 @@ Mantra['define']('Mantra.gestures.Gesture',
 		 * @constructs
 		 */
 		constructor: function () {
-			this["name"] && Mantra['gestures']['Dispecher']["register"](this);
+			this["name"] && Mantra['Dispatcher']["register"](this);
 		},
 
 		/**

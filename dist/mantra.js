@@ -1,15 +1,11 @@
-"use strict";(function(window){
+"use strict";(function(window){/*global $: true, Modernizr: true */
+
 var Mantra = window['Mantra'] = {
-	/** @const */
-	HAS_POINTEREVENTS: window.navigator.pointerEnabled || window.navigator.msPointerEnabled,
 
-	/** @const */
-	HAS_TOUCHEVENTS: ('ontouchstart' in window),
-
-	/** @const */
-	MOBILE_REGEX: /mobile|tablet|ip(ad|hone|od)|android/i,
-	/** @const */
-	NO_MOUSEEVENTS: this.HAS_TOUCHEVENTS && window.navigator.userAgent.match(this.MOBILE_REGEX),
+	/**
+	 * @const
+	 */
+	Modernizr: Modernizr || window["Modernizr"],
 
 	/** @const */
 	POINTER_MOUSE: 'mouse',
@@ -27,9 +23,24 @@ var Mantra = window['Mantra'] = {
 };
 
 /** @const */
-Mantra.DOCUMENT = window.document;
+Mantra.DOCUMENT = $(window.document);
 
+/*global Mantra: true */
 
+var Modernizr = Mantra.Modernizr;
+
+Modernizr["addTest"]('pointerevents', function () {
+	return window.navigator["pointerEnabled"] || window.navigator["msPointerEnabled"];
+});
+
+/**
+ * @const
+ */
+var MOBILE_REGEX = /mobile|tablet|ip(ad|hone|od)|android/i;
+
+Modernizr["addTest"]('mouseevents', function () {
+	return !(Modernizr.touch && window.navigator.userAgent.match(MOBILE_REGEX));
+});
 
 /*global Mantra: true */
 
@@ -147,81 +158,30 @@ Mantra["relayMethod"] = function (target, source, method) {
 	}
 };
 
-/*global Mantra: true */
+/*global Mantra: true, $: true */
 
-Mantra["define"]("Mantra.utils.NodeStore",
-	/**
-	 * @lends Mantra.utils.NodeStore.prototype
-	 */
-	{
-		constructor: function (target, id) {
-			this["target"] = target;
-			this["id"] = id;
-			this._store = {};
-		},
+/**
+ * @const
+ * @type {string}
+ */
+Mantra.NODESTORENAME = '_mantra';
 
-		"get": function (name) {
-			return this._store[name];
-		},
+Mantra['getStore'] = function (target) {
+	var store = $(target).data(Mantra.NODESTORENAME);
 
-		"set": function (name, value) {
-			this._store[name] = value;
-			return value;
-		},
-
-		"remove": function (name) {
-			var value = this["get"](name);
-			delete this._store[name];
-			return value;
-		},
-
-		/**
-		 * @lends Mantra.utils.NodeStore
-		 */
-		"statics": {
-			_stores: {},
-			_targetsIds: {},
-			_id: 0,
-
-			"getStore": function (target) {
-				var id = target["_mid"],
-					store;
-
-				if (id === void 0) {
-					target["_mid"] = id = this._id++;
-					this._targetsIds[id] = target;
-				}
-
-				store = this._stores[id];
-
-				if (!store) {
-					store = this._stores[id] = new Mantra["utils"]["NodeStore"](target, id);
-				}
-
-				return store;
-			}
-		}
+	if (!store) {
+		$(target).data(Mantra.NODESTORENAME, {});
+		store = $(target).data(Mantra.NODESTORENAME);
 	}
-);
 
-Mantra["relayMethod"](Mantra, Mantra["utils"]["NodeStore"], "getStore");
+	return store;
+};
 
-/*global Mantra: true */
+/*global Mantra: true, $: true */
 
-Mantra['define']('Mantra.gestures'
+Mantra['define']('Mantra.Dispatcher',
 	/**
-	 * @lends Mantra.gestures
-	 *
-	{
-
-	}*/
-);
-
-/*global Mantra: true */
-
-Mantra['define']('Mantra.gestures.Dispatcher',
-	/**
-	 * @lends Mantra.gestures.Dispatcher.prototype
+	 * @lends Mantra.Dispatcher.prototype
 	 */
 	{
 		"singleton": true,
@@ -241,8 +201,8 @@ Mantra['define']('Mantra.gestures.Dispatcher',
 		_determineEventTypes: function () {
 			var types = {};
 
-			if (Mantra.HAS_TOUCHEVENTS) {
-				if (Mantra.NO_MOUSEEVENTS) {
+			if (Mantra.Modernizr["touch"]) {
+				if (!Mantra.Modernizr["mouseevents"]) {
 					/** @const */
 					types[Mantra.EVENT_START] = 'touchstart';
 					/** @const */
@@ -258,17 +218,31 @@ Mantra['define']('Mantra.gestures.Dispatcher',
 					/** @const */
 					types[Mantra.EVENT_END] = 'touchend touchcancel mouseup';
 				}
-			}
-			// TODO: pointer events
 
+			} else {
+				/** @const */
+				types[Mantra.EVENT_START] = 'mousedown';
+				/** @const */
+				types[Mantra.EVENT_MOVE] = 'mousemove';
+				/** @const */
+				types[Mantra.EVENT_END] = 'mouseup';
+				// TODO: pointer events
+			}
+
+
+			/**
+			 * @const
+			 * @type {{}}
+			 */
 			Mantra.EVENT_TYPES = types;
 		},
 
 		/**
-		 * @param gesture
+		 * register gesture handlers
+		 * @param Mantra.Gesture
 		 */
 		"register": function (gesture) {
-			if (!(gesture instanceof Mantra['gestures']["Gesture"])) {
+			if (!(gesture instanceof Mantra["Gesture"])) {
 				if (typeof gesture == 'string') {
 					gesture = Mantra["resolve"](gesture);
 				}
@@ -286,25 +260,29 @@ Mantra['define']('Mantra.gestures.Dispatcher',
 				return;
 			}
 
-			var store = Mantra["getStore"](target),
+			target = $(target);
+
+			var store = Mantra['getStore'](target),
 				gestureListeners;
 
-			gestureListeners = store["get"](gestureName) || (store["set"](gestureName, []));
+			// remember listeners for target and gesture name
+			gestureListeners = store[gestureName] || (store[gestureName] = []);
 			gestureListeners.push(fn);
 
+			// remember global listeners
 			this._gestureListeners++;
 			this._gestures[gestureName].listeners++;
 
+			var targetListeners = store.listeners || (store.listeners = 1);
 
-			var startedTarget = store["get"]("detecting") || 0;
-			store["set"]("detecting", startedTarget++);
-
-			if (startedTarget == 1) {
+			// if first gesture on the target – bind detect
+			if (targetListeners == 1) {
 				this._bind(Mantra.EVENT_TYPES[Mantra.EVENT_START], target);
 			}
 
+			// if first gesture at all – bind move
 			if (this._gestureListeners == 1) {
-				this._bind(Mantra.EVENT_TYPES[Mantra.EVENT_MOVE] + ' ' + Mantra.EVENT_START[Mantra.EVENT_END]);
+				this._bind(Mantra.EVENT_TYPES[Mantra.EVENT_MOVE] + ' ' + Mantra.EVENT_TYPES[Mantra.EVENT_END]);
 			}
 		},
 
@@ -313,61 +291,56 @@ Mantra['define']('Mantra.gestures.Dispatcher',
 				return;
 			}
 
-			var store = Mantra["getStore"](target),
+			target = $(target);
+
+			var store = Mantra['getStore'](target),
 				gestureListeners;
 
-			gestureListeners = store["get"](gestureName);
+			gestureListeners = store[gestureName];
 
 			var index = gestureListeners.indexOf(fn);
 
+			// if gesture listeners has fn
 			if (index > -1) {
-				store["set"](gestureName, gestureListeners.splice(index, 1));
+				// remove fn
+				store[gestureName] = gestureListeners.splice(index, 1);
 
 				this._gestureListeners--;
 				this._gestures[gestureName].listeners--;
 
-				var startedTarget = store["get"]("detecting");
+				var targetListeners = store.listeners;
 
-				store["set"]("detecting", startedTarget--);
+				targetListeners--;
 
-				if (!startedTarget) {
+				// if last gesture listener on target - unbind detect
+				if (!targetListeners) {
 					this._unbind(Mantra.EVENT_TYPES[Mantra.EVENT_START], target);
 				}
 
+				// if last gesture listener at all – unbind move
 				if (this._gestureListeners === 0) {
-					this._unbind(Mantra.EVENT_TYPES[Mantra.EVENT_MOVE] + ' ' + Mantra.EVENT_START[Mantra.EVENT_END]);
+					this._unbind(Mantra.EVENT_TYPES[Mantra.EVENT_MOVE] + ' ' + Mantra.EVENT_TYPES[Mantra.EVENT_END]);
 				}
 			}
 		},
 
 		_bind: function (events, target) {
-			var i, l;
-
-			events = events.split(' ');
 			target || (target = Mantra.DOCUMENT);
-
-			for (i = 0, l = events.length; i < l; i++) {
-				target.addEventListener(events[i],  this._detect, false);
-			}
+			target['bind'](events,  this._detect);
 		},
 
 		_unbind: function (events, target) {
-			var i, l;
-
-			events = events.split(' ');
 			target || (target = Mantra.DOCUMENT);
-
-			for (i = 0, l = events.length; i < l; i++) {
-				target.removeEventListener(events[i],  this._detect, false);
-			}
+			target['unbind'](events,  this._detect);
 		},
 
 		_detect: function (e) {
 			console.log(e.type);
+			console.log(e);
 		},
 
 		/**
-		 * @lends Mantra.gestures.Dispecher
+		 * @lends Mantra.gestures.Dispatcher
 		 */
 		"statics": {
 
@@ -375,16 +348,16 @@ Mantra['define']('Mantra.gestures.Dispatcher',
 	}
 );
 
-Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispatcher'], "on");
-Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispatcher'], "off");
-Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispatcher'], "register");
+Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "on");
+Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "off");
+Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "register");
 
 
 /*global Mantra: true */
 
-Mantra['define']('Mantra.gestures.Gesture',
+Mantra['define']('Mantra.Gesture',
 	/**
-	 * @lends Mantra.gestures.Gesture.prototype
+	 * @lends Mantra.Gesture.prototype
 	 */
 	{
 
@@ -397,7 +370,7 @@ Mantra['define']('Mantra.gestures.Gesture',
 		 * @constructs
 		 */
 		constructor: function () {
-			this["name"] && Mantra['gestures']['Dispecher']["register"](this);
+			this["name"] && Mantra['Dispatcher']["register"](this);
 		},
 
 		/**
@@ -411,12 +384,23 @@ Mantra['define']('Mantra.gestures.Gesture',
 
 /*global Mantra: true */
 
+Mantra['define']('Mantra.gestures'
+	/**
+	 * @lends Mantra.gestures
+	 *
+	{
+
+	}*/
+);
+
+/*global Mantra: true */
+
 Mantra['define']('Mantra.gestures.Tap',
 	/**
 	 * @lends Mantra.gestures.Tap.prototype
 	 */
 	{
-		"extend": 'Mantra.gestures.Gesture',
+		"extend": 'Mantra.Gesture',
 
 		"name": "tap",
 

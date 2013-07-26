@@ -1,8 +1,8 @@
-/*global Mantra: true */
+/*global Mantra: true, $: true */
 
-Mantra['define']('Mantra.gestures.Dispatcher',
+Mantra['define']('Mantra.Dispatcher',
 	/**
-	 * @lends Mantra.gestures.Dispatcher.prototype
+	 * @lends Mantra.Dispatcher.prototype
 	 */
 	{
 		"singleton": true,
@@ -22,8 +22,8 @@ Mantra['define']('Mantra.gestures.Dispatcher',
 		_determineEventTypes: function () {
 			var types = {};
 
-			if (Mantra.HAS_TOUCHEVENTS) {
-				if (Mantra.NO_MOUSEEVENTS) {
+			if (Mantra.Modernizr["touch"]) {
+				if (!Mantra.Modernizr["mouseevents"]) {
 					/** @const */
 					types[Mantra.EVENT_START] = 'touchstart';
 					/** @const */
@@ -39,17 +39,31 @@ Mantra['define']('Mantra.gestures.Dispatcher',
 					/** @const */
 					types[Mantra.EVENT_END] = 'touchend touchcancel mouseup';
 				}
-			}
-			// TODO: pointer events
 
+			} else {
+				/** @const */
+				types[Mantra.EVENT_START] = 'mousedown';
+				/** @const */
+				types[Mantra.EVENT_MOVE] = 'mousemove';
+				/** @const */
+				types[Mantra.EVENT_END] = 'mouseup';
+				// TODO: pointer events
+			}
+
+
+			/**
+			 * @const
+			 * @type {{}}
+			 */
 			Mantra.EVENT_TYPES = types;
 		},
 
 		/**
-		 * @param gesture
+		 * register gesture handlers
+		 * @param Mantra.Gesture
 		 */
 		"register": function (gesture) {
-			if (!(gesture instanceof Mantra['gestures']["Gesture"])) {
+			if (!(gesture instanceof Mantra["Gesture"])) {
 				if (typeof gesture == 'string') {
 					gesture = Mantra["resolve"](gesture);
 				}
@@ -67,25 +81,29 @@ Mantra['define']('Mantra.gestures.Dispatcher',
 				return;
 			}
 
-			var store = Mantra["getStore"](target),
+			target = $(target);
+
+			var store = Mantra['getStore'](target),
 				gestureListeners;
 
-			gestureListeners = store["get"](gestureName) || (store["set"](gestureName, []));
+			// remember listeners for target and gesture name
+			gestureListeners = store[gestureName] || (store[gestureName] = []);
 			gestureListeners.push(fn);
 
+			// remember global listeners
 			this._gestureListeners++;
 			this._gestures[gestureName].listeners++;
 
+			var targetListeners = store.listeners || (store.listeners = 1);
 
-			var startedTarget = store["get"]("detecting") || 0;
-			store["set"]("detecting", startedTarget++);
-
-			if (startedTarget == 1) {
+			// if first gesture on the target – bind detect
+			if (targetListeners == 1) {
 				this._bind(Mantra.EVENT_TYPES[Mantra.EVENT_START], target);
 			}
 
+			// if first gesture at all – bind move
 			if (this._gestureListeners == 1) {
-				this._bind(Mantra.EVENT_TYPES[Mantra.EVENT_MOVE] + ' ' + Mantra.EVENT_START[Mantra.EVENT_END]);
+				this._bind(Mantra.EVENT_TYPES[Mantra.EVENT_MOVE] + ' ' + Mantra.EVENT_TYPES[Mantra.EVENT_END]);
 			}
 		},
 
@@ -94,61 +112,56 @@ Mantra['define']('Mantra.gestures.Dispatcher',
 				return;
 			}
 
-			var store = Mantra["getStore"](target),
+			target = $(target);
+
+			var store = Mantra['getStore'](target),
 				gestureListeners;
 
-			gestureListeners = store["get"](gestureName);
+			gestureListeners = store[gestureName];
 
 			var index = gestureListeners.indexOf(fn);
 
+			// if gesture listeners has fn
 			if (index > -1) {
-				store["set"](gestureName, gestureListeners.splice(index, 1));
+				// remove fn
+				store[gestureName] = gestureListeners.splice(index, 1);
 
 				this._gestureListeners--;
 				this._gestures[gestureName].listeners--;
 
-				var startedTarget = store["get"]("detecting");
+				var targetListeners = store.listeners;
 
-				store["set"]("detecting", startedTarget--);
+				targetListeners--;
 
-				if (!startedTarget) {
+				// if last gesture listener on target - unbind detect
+				if (!targetListeners) {
 					this._unbind(Mantra.EVENT_TYPES[Mantra.EVENT_START], target);
 				}
 
+				// if last gesture listener at all – unbind move
 				if (this._gestureListeners === 0) {
-					this._unbind(Mantra.EVENT_TYPES[Mantra.EVENT_MOVE] + ' ' + Mantra.EVENT_START[Mantra.EVENT_END]);
+					this._unbind(Mantra.EVENT_TYPES[Mantra.EVENT_MOVE] + ' ' + Mantra.EVENT_TYPES[Mantra.EVENT_END]);
 				}
 			}
 		},
 
 		_bind: function (events, target) {
-			var i, l;
-
-			events = events.split(' ');
 			target || (target = Mantra.DOCUMENT);
-
-			for (i = 0, l = events.length; i < l; i++) {
-				target.addEventListener(events[i],  this._detect, false);
-			}
+			target['bind'](events,  this._detect);
 		},
 
 		_unbind: function (events, target) {
-			var i, l;
-
-			events = events.split(' ');
 			target || (target = Mantra.DOCUMENT);
-
-			for (i = 0, l = events.length; i < l; i++) {
-				target.removeEventListener(events[i],  this._detect, false);
-			}
+			target['unbind'](events,  this._detect);
 		},
 
 		_detect: function (e) {
 			console.log(e.type);
+			console.log(e);
 		},
 
 		/**
-		 * @lends Mantra.gestures.Dispecher
+		 * @lends Mantra.gestures.Dispatcher
 		 */
 		"statics": {
 
@@ -156,7 +169,7 @@ Mantra['define']('Mantra.gestures.Dispatcher',
 	}
 );
 
-Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispatcher'], "on");
-Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispatcher'], "off");
-Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispatcher'], "register");
+Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "on");
+Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "off");
+Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "register");
 

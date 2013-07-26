@@ -10,11 +10,12 @@ module.exports = function (grunt) {
 				},
 				src: [
 					'src/Mantra.js',
+					'src/utils/support.js',
 					'src/utils/define.js',
-					'src/utils/NodeStore.js',
+					'src/utils/store.js',
+					'src/Dispatcher.js',
+					'src//Gesture.js',
 					'src/gestures/gestures.js',
-					'src/gestures/Dispatcher.js',
-					'src/gestures/Gesture.js',
 					'src/gestures/Tap.js'
 				],
 				dest: '<%= pkg.main %>'
@@ -64,6 +65,44 @@ module.exports = function (grunt) {
 				output: "examples/jquery",
 				versions: ['2.0.0']
 			}
+		},
+
+		modernizr: {
+			devFile: 'examples/modernizr/modernizr.js',
+			outputFile: 'examples/modernizr/modernizr.js',
+			"extra" : {
+				"shiv" : false,
+				"printshiv" : false,
+				"load" : false,
+				"mq" : false,
+				"cssclasses" : true
+			},
+
+			"extensibility" : {
+				"addtest" : true,
+				"prefixed" : true,
+				"teststyles" : true,
+				"testprops" : true,
+				"testallprops" : true,
+				"hasevents" : true,
+				"prefixes" : true,
+				"domprefixes" : true
+			},
+
+			"uglify" : false,
+
+			"tests" : [
+				'touch'
+			],
+
+			"parseFiles" : true,
+
+			"files" : ['src/**/*.js'],
+
+			"matchCommunityTests" : false,
+
+			"customTests" : []
+
 		}
 	});
 
@@ -73,8 +112,11 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-closure-compiler');
 	grunt.loadNpmTasks("grunt-jquery-builder");
+	grunt.loadNpmTasks("grunt-modernizr");
+
+	grunt.registerTask('libs', ['jquery', 'modernizr']);
 
 	grunt.registerTask('test', ['jshint']);
-	grunt.registerTask('default', ['test', 'concat:all', 'clean:build', 'closure-compiler', 'jquery', 'concat:build']);
+	grunt.registerTask('default', ['test', 'concat:all', 'clean:build', 'closure-compiler', 'concat:build']);
 
 };

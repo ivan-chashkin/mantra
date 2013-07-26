@@ -1,15 +1,11 @@
+/*global $: true, Modernizr: true */
 
 var Mantra = window['Mantra'] = {
-	/** @const */
-	HAS_POINTEREVENTS: window.navigator.pointerEnabled || window.navigator.msPointerEnabled,
 
-	/** @const */
-	HAS_TOUCHEVENTS: ('ontouchstart' in window),
-
-	/** @const */
-	MOBILE_REGEX: /mobile|tablet|ip(ad|hone|od)|android/i,
-	/** @const */
-	NO_MOUSEEVENTS: this.HAS_TOUCHEVENTS && window.navigator.userAgent.match(this.MOBILE_REGEX),
+	/**
+	 * @const
+	 */
+	Modernizr: Modernizr || window["Modernizr"],
 
 	/** @const */
 	POINTER_MOUSE: 'mouse',
@@ -27,6 +23,4 @@ var Mantra = window['Mantra'] = {
 };
 
 /** @const */
-Mantra.DOCUMENT = window.document;
-
-
+Mantra.DOCUMENT = $(window.document);

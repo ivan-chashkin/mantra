@@ -5,7 +5,7 @@ Mantra['define']('Mantra.gestures.Tap',
 	 * @lends Mantra.gestures.Tap.prototype
 	 */
 	{
-		"extend": 'Mantra.gestures.Gesture',
+		"extend": 'Mantra.Gesture',
 
 		"name": "tap",
 
