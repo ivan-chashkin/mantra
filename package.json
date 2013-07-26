@@ -1,34 +1,35 @@
 {
-	"name": "mantra",
-	"version": "0.0.0",
-	"title": "Mantra",
-	"description": "A javascript library for multi-touch UI components",
-	"main": "dist/mantra.js",
-	"scripts": {
-		"test": "grunt test"
-	},
-	"repository": {
-		"type": "git",
-		"url": "git://github.com/madimp/mantra.git"
-	},
-	"keywords": [
-		"touch"
-	],
-	"author": "Egor Dydykin <root@madimp.pro>",
-	"contributors": [
-		"Egor Dydykin <root@madimp.pro>",
-		"Anton Eprev <a.eprev@gmail.com>"
-	],
-	"license": "MIT",
-	"bugs": {
-		"url": "https://github.com/madimp/mantra/issues"
-	},
-	"devDependencies": {
-		"grunt": "~0.4.1",
-		"grunt-contrib-concat": "~0.3.0",
-		"grunt-contrib-clean": "~0.4.1",
-		"grunt-contrib-copy": "~0.4.1",
-		"grunt-contrib-jshint": "~0.1.1",
-		"grunt-closure-compiler": "~0.0.18"
-	}
+  "name": "mantra",
+  "version": "0.0.0",
+  "title": "Mantra",
+  "description": "A javascript library for multi-touch UI components",
+  "main": "dist/mantra.js",
+  "scripts": {
+    "test": "grunt test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/madimp/mantra.git"
+  },
+  "keywords": [
+    "touch"
+  ],
+  "author": "Egor Dydykin <root@madimp.pro>",
+  "contributors": [
+    "Egor Dydykin <root@madimp.pro>",
+    "Anton Eprev <a.eprev@gmail.com>"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/madimp/mantra/issues"
+  },
+  "devDependencies": {
+    "grunt": "~0.4.1",
+    "grunt-contrib-concat": "~0.3.0",
+    "grunt-contrib-clean": "~0.4.1",
+    "grunt-contrib-copy": "~0.4.1",
+    "grunt-contrib-jshint": "~0.1.1",
+    "grunt-closure-compiler": "~0.0.18",
+    "grunt-jquery-builder": "~0.1.1"
+  }
 }

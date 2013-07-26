@@ -13,7 +13,7 @@ module.exports = function (grunt) {
 					'src/utils/define.js',
 					'src/utils/NodeStore.js',
 					'src/gestures/gestures.js',
-					'src/gestures/Dispecher.js',
+					'src/gestures/Dispatcher.js',
 					'src/gestures/Gesture.js',
 					'src/gestures/Tap.js'
 				],
@@ -57,6 +57,13 @@ module.exports = function (grunt) {
 					language_in: 'ECMASCRIPT5_STRICT'
 				}
 			}
+		},
+
+		jquery: {
+			dist: {
+				output: "examples/jquery",
+				versions: ['2.0.0']
+			}
 		}
 	});
 
@@ -65,8 +72,9 @@ module.exports = function (grunt) {
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-closure-compiler');
+	grunt.loadNpmTasks("grunt-jquery-builder");
 
 	grunt.registerTask('test', ['jshint']);
-	grunt.registerTask('default', ['test', 'concat:all', 'clean:build', 'closure-compiler', 'concat:build']);
+	grunt.registerTask('default', ['test', 'concat:all', 'clean:build', 'closure-compiler', 'jquery', 'concat:build']);
 
 };

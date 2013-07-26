@@ -1,8 +1,8 @@
 /*global Mantra: true */
 
-Mantra['define']('Mantra.gestures.Dispecher',
+Mantra['define']('Mantra.gestures.Dispatcher',
 	/**
-	 * @lends Mantra.gestures.Dispecher.prototype
+	 * @lends Mantra.gestures.Dispatcher.prototype
 	 */
 	{
 		"singleton": true,
@@ -156,7 +156,7 @@ Mantra['define']('Mantra.gestures.Dispecher',
 	}
 );
 
-Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispecher'], "on");
-Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispecher'], "off");
-Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispecher'], "register");
+Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispatcher'], "on");
+Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispatcher'], "off");
+Mantra["relayMethod"](Mantra, Mantra['gestures']['Dispatcher'], "register");
 
