@@ -13,8 +13,9 @@ module.exports = function (grunt) {
 					'src/utils/support.js',
 					'src/utils/define.js',
 					'src/utils/store.js',
-					'src/Dispatcher.js',
-					'src//Gesture.js',
+					'src/GestureDetector.js',
+					'src/GestureDispatcher.js',
+					'src/Gesture.js',
 					'src/gestures/gestures.js',
 					'src/gestures/Tap.js'
 				],

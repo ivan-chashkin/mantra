@@ -15,7 +15,7 @@ Mantra['define']('Mantra.Gesture',
 		 * @constructs
 		 */
 		constructor: function () {
-			this["name"] && Mantra['Dispatcher']["register"](this);
+			this["name"] && Mantra['GestureDispatcher']["register"](this);
 		},
 
 		/**

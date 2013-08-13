@@ -177,11 +177,11 @@ Mantra['getStore'] = function (target) {
 	return store;
 };
 
-/*global Mantra: true, $: true */
+/*global Mantra: true */
 
-Mantra['define']('Mantra.Dispatcher',
+Mantra['define']('Mantra.GestureDetector',
 	/**
-	 * @lends Mantra.Dispatcher.prototype
+	 * @lends Mantra.GestureDetector.prototype
 	 */
 	{
 		"singleton": true,
@@ -190,7 +190,78 @@ Mantra['define']('Mantra.Dispatcher',
 		 * @constructs
 		 */
 		constructor: function () {
-			this._detect = this._detect.bind(this);
+			this.detect = this.detect.bind(this);
+		},
+
+		_detecting: false,
+
+		detect: function (e) {
+			var type = this._getEventType(e);/*,
+				target = $(e.target),
+				store = Mantra['getStore'](target);*/
+
+			if (type == Mantra.EVENT_START) {
+				if (this._detecting) {
+					return;
+				}
+
+				this._detecting = true;
+
+			} else if (type == Mantra.EVENT_MOVE) {
+				if (!this._detecting) {
+					return;
+				}
+
+			} else if (type == Mantra.EVENT_END) {
+				if (!this._detecting) {
+					return;
+				}
+
+				this._detecting = false;
+			}
+
+			console.log(2, type);
+		},
+
+		_getEventType: function (e) {
+			var type = e.type;
+
+			if (!!~Mantra.EVENT_TYPES[Mantra.EVENT_START].indexOf(type)) {
+				type = Mantra.EVENT_START;
+
+			} else if (!!~Mantra.EVENT_TYPES[Mantra.EVENT_END].indexOf(type)) {
+				type = Mantra.EVENT_END;
+
+			} else if (!!~Mantra.EVENT_TYPES[Mantra.EVENT_MOVE].indexOf(type)) {
+				type = Mantra.EVENT_MOVE;
+
+			}
+
+			return type;
+		},
+
+		/**
+		 * @lends Mantra.GestureDetector
+		 */
+		"statics": {
+
+		}
+	}
+);
+
+/*global Mantra: true, $: true */
+
+Mantra['define']('Mantra.GestureDispatcher',
+	/**
+	 * @lends Mantra.GestureDispatcher.prototype
+	 */
+	{
+		"singleton": true,
+
+		/**
+		 * @constructs
+		 */
+		constructor: function () {
 			this._determineEventTypes();
 		},
 
@@ -326,21 +397,16 @@ Mantra['define']('Mantra.Dispatcher',
 
 		_bind: function (events, target) {
 			target || (target = Mantra.DOCUMENT);
-			target['bind'](events,  this._detect);
+			target['bind'](events,  Mantra["GestureDetector"].detect);
 		},
 
 		_unbind: function (events, target) {
 			target || (target = Mantra.DOCUMENT);
-			target['unbind'](events,  this._detect);
-		},
-
-		_detect: function (e) {
-			console.log(e.type);
-			console.log(e);
+			target['unbind'](events,  Mantra["GestureDetector"].detect);
 		},
 
 		/**
-		 * @lends Mantra.gestures.Dispatcher
+		 * @lends Mantra.GestureDispatcher
 		 */
 		"statics": {
 
@@ -348,9 +414,9 @@ Mantra['define']('Mantra.Dispatcher',
 	}
 );
 
-Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "on");
-Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "off");
-Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "register");
+Mantra["relayMethod"](Mantra, Mantra['GestureDispatcher'], "on");
+Mantra["relayMethod"](Mantra, Mantra['GestureDispatcher'], "off");
+Mantra["relayMethod"](Mantra, Mantra['GestureDispatcher'], "register");
 
 
 /*global Mantra: true */
@@ -370,7 +436,7 @@ Mantra['define']('Mantra.Gesture',
 		 * @constructs
 		 */
 		constructor: function () {
-			this["name"] && Mantra['Dispatcher']["register"](this);
+			this["name"] && Mantra['GestureDispatcher']["register"](this);
 		},
 
 		/**

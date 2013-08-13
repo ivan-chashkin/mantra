@@ -1,8 +1,8 @@
 /*global Mantra: true, $: true */
 
-Mantra['define']('Mantra.Dispatcher',
+Mantra['define']('Mantra.GestureDispatcher',
 	/**
-	 * @lends Mantra.Dispatcher.prototype
+	 * @lends Mantra.GestureDispatcher.prototype
 	 */
 	{
 		"singleton": true,
@@ -11,7 +11,6 @@ Mantra['define']('Mantra.Dispatcher',
 		 * @constructs
 		 */
 		constructor: function () {
-			this._detect = this._detect.bind(this);
 			this._determineEventTypes();
 		},
 
@@ -147,21 +146,16 @@ Mantra['define']('Mantra.Dispatcher',
 
 		_bind: function (events, target) {
 			target || (target = Mantra.DOCUMENT);
-			target['bind'](events,  this._detect);
+			target['bind'](events,  Mantra["GestureDetector"].detect);
 		},
 
 		_unbind: function (events, target) {
 			target || (target = Mantra.DOCUMENT);
-			target['unbind'](events,  this._detect);
-		},
-
-		_detect: function (e) {
-			console.log(e.type);
-			console.log(e);
+			target['unbind'](events,  Mantra["GestureDetector"].detect);
 		},
 
 		/**
-		 * @lends Mantra.gestures.Dispatcher
+		 * @lends Mantra.GestureDispatcher
 		 */
 		"statics": {
 
@@ -169,7 +163,7 @@ Mantra['define']('Mantra.Dispatcher',
 	}
 );
 
-Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "on");
-Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "off");
-Mantra["relayMethod"](Mantra, Mantra['Dispatcher'], "register");
+Mantra["relayMethod"](Mantra, Mantra['GestureDispatcher'], "on");
+Mantra["relayMethod"](Mantra, Mantra['GestureDispatcher'], "off");
+Mantra["relayMethod"](Mantra, Mantra['GestureDispatcher'], "register");
 
