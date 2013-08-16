@@ -4,7 +4,7 @@
 	<title>MANTRA</title>
 	<script src="jquery/2.0.0.js"></script>
 	<script src="modernizr/modernizr.js"></script>
-	<script src="dist/mantra.min.js"></script>
+	<script src="dist/mantra.js"></script>
 	<style>
 		.left-top {
 			position: absolute;
@@ -29,7 +29,7 @@
 			right: 0;
 			top: 0;
 			left: 40%;
-			bottom: 0;
+			bottom: 50%;
 			background: indianred;
 		}
 
@@ -42,21 +42,32 @@
 			margin: 5px;
 			background: yellowgreen;
 		}
+		.console {
+			width: 300px;
+			position: fixed;
+			right: 0;
+			bottom: 0;
+			z-index: 100;
+			overflow: hidden;
+			max-height: 60%;
+			background: white;
+		}
 	</style>
 </head>
 <body>
-	<div id="left-top" class="left-top">
-		<div class="list">
-			<div>text text text text text text text text text text text text </div>
-			<div>text text text text text text <a href="#">text text text text</a> text text </div>
-			<div>text text text text text text <a href="#">text text text text</a> text text </div>
-			<div>text text text text text text <a href="#">text text text text</a> text text </div>
-			<div>text text text text text text <a href="#">text text text text</a> text text </div>
-			<div>text text text text text text <a href="#">text text text text</a> text text </div>
-			<div>text text text text text text <a href="#">text text text text</a> text text </div>
-		</div>
-	</div>
+<div id="console" class="console"></div>
 	<div id="left-bottom" class="left-bottom">
+		<div id="left-top" class="left-top">
+			<div class="list">
+				<div>text text text text text text text text text text text text </div>
+				<div>text text text text text text <a href="#">text text text text</a> text text </div>
+				<div>text text text text text text <a href="#">text text text text</a> text text </div>
+				<div>text text text text text text <a href="#">text text text text</a> text text </div>
+				<div>text text text text text text <a href="#">text text text text</a> text text </div>
+				<div>text text text text text text <a href="#">text text text text</a> text text </div>
+				<div>text text text text text text <a href="#">text text text text</a> text text </div>
+			</div>
+		</div>
 		<div class="list">
 			<div>text text text text text text text text text text text text </div>
 			<div>text text text text text text <a href="#">text text text text</a> text text </div>
@@ -89,6 +100,37 @@
 
 		var cb3 = function(e){
 			console.log('right', e);
+		};
+
+		var c = document.getElementById('console'),
+			oldc = console;
+
+		console && (console = {});
+		console.log = function(){
+			var text = '';
+
+			for (var i = 0, l = arguments.length; i < l; i++){
+				if (i != 0){
+					text += ', ';
+				}
+				var arg = arguments[i];
+
+				if (typeof arg != 'string'){
+					arg = JSON.stringify(arg);
+				}
+
+				text += arg;
+			}
+
+			var d = document.createElement('div');
+			d.innerHTML = text;
+			c.appendChild(d);
+			c.scrollTop = 1000000000;
+			setTimeout(function(){
+				d.parentNode.removeChild(d);
+			},1000 * 10);
+
+			//oldc.log.apply(oldc, arguments)
 		};
 
 		Mantra.on("tap", document.getElementById('left-top'), cb1);

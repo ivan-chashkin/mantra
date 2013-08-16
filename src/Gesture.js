@@ -15,7 +15,11 @@ Mantra['define']('Mantra.Gesture',
 		 * @constructs
 		 */
 		constructor: function () {
-			this["name"] && Mantra['GestureDispatcher']["register"](this);
+			this["name"] && Mantra['GesturesDispatcher']["register"](this);
+		},
+
+		"process": function(){
+			return false;
 		},
 
 		/**

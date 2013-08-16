@@ -3,7 +3,7 @@
 var Modernizr = Mantra.Modernizr;
 
 Modernizr["addTest"]('pointerevents', function () {
-	return window.navigator["pointerEnabled"] || window.navigator["msPointerEnabled"];
+	return window.navigator["pointerEnabled"] || window.navigator["msPointerEnabled"] || false;
 });
 
 /**

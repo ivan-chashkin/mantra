@@ -11,11 +11,12 @@ module.exports = function (grunt) {
 				src: [
 					'src/Mantra.js',
 					'src/utils/support.js',
+					'src/utils/const.js',
 					'src/utils/define.js',
 					'src/utils/store.js',
-					'src/GestureDetector.js',
-					'src/GestureDispatcher.js',
+					'src/GesturesDispatcher.js',
 					'src/Gesture.js',
+					'src/Finger.js',
 					'src/gestures/gestures.js',
 					'src/gestures/Tap.js'
 				],
@@ -104,20 +105,55 @@ module.exports = function (grunt) {
 
 			"customTests" : []
 
+		},
+
+		notify_hooks: {
+			options: {
+				enabled: true,
+				max_jshint_notifications: 0,
+				title: "Mantra"
+			}
+		},
+
+		notify: {
+			watch: {
+				options: {
+					message: "Watch rebuild"
+				}
+			}
+		},
+
+		watch: {
+			'default': {
+				files: [
+					'src/**/*.js'
+				],
+				tasks: ['build'],
+				options: {
+					//livereload: 35729,
+					interrupt: true
+				}
+			}
 		}
 	});
 
 	grunt.loadNpmTasks('grunt-contrib-concat');
+	grunt.loadNpmTasks('grunt-contrib-watch');
 	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-contrib-copy');
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-closure-compiler');
 	grunt.loadNpmTasks("grunt-jquery-builder");
 	grunt.loadNpmTasks("grunt-modernizr");
+	grunt.loadNpmTasks('grunt-notify');
+
+	grunt.task.run('notify_hooks');
 
 	grunt.registerTask('libs', ['jquery', 'modernizr']);
 
 	grunt.registerTask('test', ['jshint']);
-	grunt.registerTask('default', ['test', 'concat:all', 'clean:build', 'closure-compiler', 'concat:build']);
+	grunt.registerTask('build', ['concat:all', 'clean:build', 'closure-compiler', 'concat:build', 'notify:watch']);
+
+	grunt.registerTask('default', ['test', 'build']);
 
 };

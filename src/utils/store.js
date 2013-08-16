@@ -7,12 +7,18 @@
 Mantra.NODESTORENAME = '_mantra';
 
 Mantra['getStore'] = function (target) {
-	var store = $(target).data(Mantra.NODESTORENAME);
+	var store = Mantra["hasStore"](target);
 
 	if (!store) {
 		$(target).data(Mantra.NODESTORENAME, {});
 		store = $(target).data(Mantra.NODESTORENAME);
 	}
+
+	return store;
+};
+
+Mantra["hasStore"] = function (target) {
+	var store = $(target).data(Mantra.NODESTORENAME);
 
 	return store;
 };
