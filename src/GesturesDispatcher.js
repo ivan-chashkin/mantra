@@ -144,8 +144,29 @@ Mantra['define']('Mantra.GesturesDispatcher',
 							var listeners = store["listeners"][gestureName],
 								gesture = this._gestures[gestureName]["gesture"];
 
-							event["fingers"] = store["fingers"];
-							gesture["process"](changedFinger, event);
+							if (!listeners || !listeners.length || changedFinger["isGestureDisabled"](gestureName)){
+								continue;
+							}
+
+							event["fingers"] = store["fingers"].slice();
+
+							var success = gesture["_process"](changedFinger, event);
+
+							changedFinger["disableGesture"](gestureName, success === false);
+
+							if (success === true) {
+								var customEvent = this._createCustomEvent(gestureName, event);
+
+								for (var i = 0, l = listeners.length; i < l; i++){
+									listeners[i].apply(target, [customEvent]);
+								}
+
+								if (customEvent["isPropagationStopped"]()){
+									target = {};
+								}
+
+								break;
+							}
 						}
 
 					}
@@ -154,6 +175,34 @@ Mantra['define']('Mantra.GesturesDispatcher',
 				}
 			}
 
+		},
+
+		_createCustomEvent: function(gestureName, event){
+			var e = {
+				"type": gestureName,
+
+				_prevented: false,
+
+				"preventDefault": function(){
+					this._prevented = true;
+				},
+
+				"isDefaultPrevented": function(){
+					return this._prevented;
+				},
+
+				_stopped: false,
+
+				"stopPropagation": function(){
+					this._stopped = true;
+				},
+
+				"isPropagationStopped": function(){
+					return this._stopped;
+				}
+			};
+
+			return e;
 		},
 
 		_detecting: false,
@@ -286,7 +335,7 @@ Mantra['define']('Mantra.GesturesDispatcher',
 		_makeFinger: function(id, event, touch){
 			var finger,
 				type = event["type"];
-//TODO targetFingers
+
 			switch (type){
 				case Mantra.EVENT_START:
 					if (!this._fingersById[id]){

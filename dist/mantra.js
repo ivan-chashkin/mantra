@@ -108,39 +108,55 @@ Mantra.EVENT_END = 'end';
 Mantra['define'] = function (name, object) {
 	object || (object = {});
 	var source = Mantra,
-		constructor = object.hasOwnProperty('constructor') && typeof object["constructor"] == 'function' ? object["constructor"] : false,
+		constr = object.hasOwnProperty('constructor') && typeof object["constructor"] == 'function' ? object["constructor"] : false,
 		statics,
 		extend = typeof object["extend"] == 'string' ? Mantra['resolve'](object["extend"]) : object["extend"];
 
-	if (constructor) {
-		var prototype,
-			_constructor = constructor;
+	function superprop(p, sp) {
+		return (typeof p === 'function' && p.toString().indexOf('__super') != -1) ? function () {
+			var t = this.__super;
+			this.__super = sp;
+			var ret = p.apply(this, arguments);
+			this.__super = t;
+			return ret;
+		} : p;
+	}
 
-		constructor = function () {
-			_constructor.apply(this, arguments);
+	if (constr) {
+		var prototype,
+			_constructor = constr;
+
+		constr = function () {
+			superprop(_constructor, extend ? extend : void 0).apply(this, arguments);
+			//_constructor.apply(this, arguments);
 		};
 
 		if (extend) {
 			var F = function () {};
 
+			if (!extend.prototype){
+				extend = extend["constructor"];
+			}
+
 			/* TODO: static names ['prop'] for constructor, superconstructor, superclass */
+
 			F.prototype = extend.prototype;
-			constructor.prototype = new F();
-			constructor.prototype["constructor"] = constructor;
-			constructor.prototype["superconstructor"] = extend;
-			constructor.prototype["superclass"] = extend.prototype;
+			constr.prototype = new F();
+			constr.prototype["constructor"] = constr;
+			/*constructor.prototype["superconstructor"] = extend;
+			constructor.prototype["superclass"] = extend.prototype;*/
 		}
 
-		prototype = constructor.prototype;
+		prototype = constr.prototype;
 
 		for (var objectProp in object) {
 			if (object.hasOwnProperty(objectProp) && objectProp != 'constructor' && objectProp != 'statics') {
-				prototype[objectProp] = object[objectProp];
+				prototype[objectProp] = superprop(object[objectProp], extend ? extend.prototype[objectProp] : void 0);
 			}
 		}
 
-		if (constructor.prototype["singleton"] && !constructor.prototype.hasOwnProperty("abstract")) {
-			constructor = new constructor();
+		if (constr.prototype["singleton"] && !constr.prototype.hasOwnProperty("abstract")) {
+			constr = new constr();
 		}
 	}
 
@@ -155,8 +171,8 @@ Mantra['define'] = function (name, object) {
 		var subname = name[i];
 
 		if (!source[subname]) {
-			if (i == l - 1 && constructor) {
-				source[subname] = constructor;
+			if (i == l - 1 && constr) {
+				source[subname] = constr;
 			} else {
 				source[subname] = {};
 			}
@@ -166,7 +182,7 @@ Mantra['define'] = function (name, object) {
 	}
 	//}
 
-	statics = constructor ? object["statics"] : object;
+	statics = constr ? object["statics"] : object;
 	if (statics) {
 		for (var staticProp in statics) {
 			if (statics.hasOwnProperty(staticProp)) {
@@ -386,8 +402,29 @@ Mantra['define']('Mantra.GesturesDispatcher',
 							var listeners = store["listeners"][gestureName],
 								gesture = this._gestures[gestureName]["gesture"];
 
-							event["fingers"] = store["fingers"];
-							gesture["process"](changedFinger, event);
+							if (!listeners || !listeners.length || changedFinger["isGestureDisabled"](gestureName)){
+								continue;
+							}
+
+							event["fingers"] = store["fingers"].slice();
+
+							var success = gesture["_process"](changedFinger, event);
+
+							changedFinger["disableGesture"](gestureName, success === false);
+
+							if (success === true) {
+								var customEvent = this._createCustomEvent(gestureName, event);
+
+								for (var i = 0, l = listeners.length; i < l; i++){
+									listeners[i].apply(target, [customEvent]);
+								}
+
+								if (customEvent["isPropagationStopped"]()){
+									target = {};
+								}
+
+								break;
+							}
 						}
 
 					}
@@ -396,6 +433,34 @@ Mantra['define']('Mantra.GesturesDispatcher',
 				}
 			}
 
+		},
+
+		_createCustomEvent: function(gestureName, event){
+			var e = {
+				"type": gestureName,
+
+				_prevented: false,
+
+				"preventDefault": function(){
+					this._prevented = true;
+				},
+
+				"isDefaultPrevented": function(){
+					return this._prevented;
+				},
+
+				_stopped: false,
+
+				"stopPropagation": function(){
+					this._stopped = true;
+				},
+
+				"isPropagationStopped": function(){
+					return this._stopped;
+				}
+			};
+
+			return e;
 		},
 
 		_detecting: false,
@@ -528,7 +593,7 @@ Mantra['define']('Mantra.GesturesDispatcher',
 		_makeFinger: function(id, event, touch){
 			var finger,
 				type = event["type"];
-//TODO targetFingers
+
 			switch (type){
 				case Mantra.EVENT_START:
 					if (!this._fingersById[id]){
@@ -622,8 +687,83 @@ Mantra['define']('Mantra.Gesture',
 			this["name"] && Mantra['GesturesDispatcher']["register"](this);
 		},
 
-		"process": function(){
-			return false;
+		"maxSpeed": null,
+		"minSpeed": null,
+
+		"maxDelta": null,
+		"minDelta": null,
+
+		"minDelay": null,
+		"maxDelay": null,
+		"axis": null,
+
+		"fingers": 1,
+
+		"_process": function(finger, event){
+			this._finger = finger;
+			this._event = event;
+
+			var result;
+
+			if (event["fingers"].length != this["fingers"] && finger["phase"] != Mantra.EVENT_END){
+				this._finger = this._event = null;
+				return false;
+			}
+
+			switch (finger["phase"]){
+				case Mantra.EVENT_START:
+
+				break;
+
+				case Mantra.EVENT_MOVE:
+					var delta = this._checkDelta();
+
+					if (!delta){
+						result = false;
+					}
+
+				break;
+
+				case Mantra.EVENT_END:
+					var delta = this._checkDelta(),
+						delay = this._checkDelay();
+
+					result = delta && delay;
+
+				break;
+			}
+
+			if (result !== false && "process" in this){
+				result = this["process"].apply(this, arguments);
+			}
+
+			this._finger = this._event = null;
+
+			return result;
+		},
+
+		_checkDelta: function(){
+			if (
+				this["maxDelta"] !== null && this._finger["deltaTotal"] > this["maxDelta"]
+				||
+				this["minDelta"] !== null && this._finger["deltaTotal"] < this["minDelta"]
+			){
+				return false;
+			}
+
+			return true;
+		},
+
+		_checkDelay: function(){
+			if (
+				this["maxDelay"] !== null && this._finger["time"] > this["maxDelay"]
+				||
+				this["minDelay"] !== null && this._finger["time"] < this["minDelay"]
+			){
+				return false;
+			} else {
+				return true;
+			}
 		},
 
 		/**
@@ -648,7 +788,8 @@ Mantra['define']('Mantra.Finger',
 		constructor: function (touch) {
 			this["phase"] = "start";
 			this["states"] = [];
-			this._getState(touch, this);
+			this._disabledGesures = {};
+			this._setState(this._getState(touch));
 			this["firstTarget"] = touch["target"];
 		},
 
@@ -663,28 +804,86 @@ Mantra['define']('Mantra.Finger',
 		"phase": null,
 		"firstTarget": null,
 
+		"deltaX": null,
+		"deltaY": null,
+		"deltaXTotal": null,
+		"deltaYTotal": null,
+		"speedX": null,
+		"speedY": null,
+		"timeDelta": null,
+		"time": null,
+
 		"states": null,
 
 		"update": function(touch, phase){
 			this["phase"] = phase;
-			this["states"].push(this._getState(this));
+			this._setState(this._getState(touch));
 		},
 
-		_getState: function(from, to){
-			var obj = to || {};
+		_getState: function(touch){
+			var obj = {};
 
-			from || (from = this);
+			touch || (touch = this);
 
-			obj["identifier"] = "identifier" in from ? from["identifier"] : from["pointerId"] || 0;
-			obj["clientX"] = from["clientX"];
-			obj["clientY"] = from["clientY"];
-			obj["pageX"] = from["pageX"];
-			obj["pageY"] = from["pageY"];
-			obj["screenX"] = from["screenX"];
-			obj["screenY"] = from["screenY"];
-			obj["target"] = from["target"];
+			obj["identifier"] = "identifier" in touch ? touch["identifier"] : touch["pointerId"] || 0;
+			obj["clientX"] = touch["clientX"];
+			obj["clientY"] = touch["clientY"];
+			obj["pageX"] = touch["pageX"];
+			obj["pageY"] = touch["pageY"];
+			obj["screenX"] = touch["screenX"];
+			obj["screenY"] = touch["screenY"];
+			obj["target"] = touch["target"];
+
+			var lastState = this["states"].length ? this["states"][this["states"].length - 1] : null,
+				firstState = this["states"][0];
+
+			obj["timestamp"] = new Date*1;
+			obj["timeDelta"] = lastState ? obj["timestamp"] - lastState["timestamp"] : 0;
+			obj["time"] = lastState ? obj["timestamp"] - firstState["timestamp"] : 0;
+
+
+
+			// @TODO end without move?
+			if (this["phase"] == Mantra.EVENT_END){
+				obj["deltaX"] = lastState["deltaX"];
+				obj["deltaY"] = lastState["deltaY"];
+				obj["speedX"] = lastState["speedX"];
+				obj["speedY"] = lastState["speedY"];
+
+			} else {
+				obj["deltaX"] = lastState ? obj["clientX"] - lastState["clientX"] : 0;
+				obj["deltaY"] = lastState ? obj["clientY"] - lastState["clientY"] : 0;
+				obj["speedX"] = lastState ? obj["deltaX"] / obj["timeDelta"] : 0;
+				obj["speedY"] = lastState ? obj["deltaY"] / obj["timeDelta"] : 0;
+
+			}
+
+			obj["deltaXTotal"] = lastState ? obj["clientX"] - firstState["clientX"] : 0;
+			obj["deltaYTotal"] = lastState ? obj["clientY"] - firstState["clientY"] : 0;
+
+			obj["delta"] = Math.sqrt(Math.pow(obj["deltaX"], 2) + Math.pow(obj["deltaY"], 2));
+			obj["deltaTotal"] = Math.sqrt(Math.pow(obj["deltaXTotal"], 2) + Math.pow(obj["deltaYTotal"], 2));
+
+			obj["speed"] = Math.sqrt(Math.pow(obj["speedX"], 2) + Math.pow(obj["speedY"], 2));
 
 			return obj;
+		},
+
+		_setState: function(state){
+			this["states"].push(state);
+			for (var prop in state) {
+				if (state.hasOwnProperty(prop)) {
+					this[prop] = state[prop];
+				}
+			}
+		},
+
+		"disableGesture": function(gesture, disable) {
+			this._disabledGesures[gesture] = disable;
+		},
+
+		"isGestureDisabled": function(gesture) {
+			return this._disabledGesures[gesture] === true;
 		},
 
 		"statics": {
@@ -714,17 +913,43 @@ Mantra['define']('Mantra.gestures.Tap',
 
 		"name": "tap",
 
+		"maxDelta": 10,
+		//"minDelta": 0,
+
+		//"minDelay": 0,
+		"maxDelay": 300,
+
 		/**
 		 * @constructs
 		 */
 		constructor: function () {
-			this["superconstructor"].apply(this);
-		},
+			//this["constructor"].prototype["constructor"].apply(this);
+			this.__super.apply(this);
+		}
 
-		"process": function(finger, event){
-			//console.log(finger.identifier, event.type, event.fingers.length);
-			//oldc.log(finger, event);
-			oldc.log(finger, event.fingers, event.changedFingers);
+	}
+);
+
+/*global Mantra: true */
+
+Mantra['define']('Mantra.gestures.Hold',
+	/**
+	 * @lends Mantra.gestures.Hold.prototype
+	 */
+	{
+		"extend": 'Mantra.gestures.Tap',
+
+		"name": "hold",
+
+		"minDelay": 300,
+		"maxDelay": 1000,
+
+		/**
+		 * @constructs
+		 */
+		constructor: function () {
+			//this["constructor"].prototype["constructor"].apply(this);
+			this.__super.apply(this);
 		}
 
 	}

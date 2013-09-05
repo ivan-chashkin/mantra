@@ -18,7 +18,8 @@ module.exports = function (grunt) {
 					'src/Gesture.js',
 					'src/Finger.js',
 					'src/gestures/gestures.js',
-					'src/gestures/Tap.js'
+					'src/gestures/Tap.js',
+					'src/gestures/Hold.js'
 				],
 				dest: '<%= pkg.main %>'
 			},

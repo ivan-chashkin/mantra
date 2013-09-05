@@ -7,39 +7,55 @@
 Mantra['define'] = function (name, object) {
 	object || (object = {});
 	var source = Mantra,
-		constructor = object.hasOwnProperty('constructor') && typeof object["constructor"] == 'function' ? object["constructor"] : false,
+		constr = object.hasOwnProperty('constructor') && typeof object["constructor"] == 'function' ? object["constructor"] : false,
 		statics,
 		extend = typeof object["extend"] == 'string' ? Mantra['resolve'](object["extend"]) : object["extend"];
 
-	if (constructor) {
-		var prototype,
-			_constructor = constructor;
+	function superprop(p, sp) {
+		return (typeof p === 'function' && p.toString().indexOf('__super') != -1) ? function () {
+			var t = this.__super;
+			this.__super = sp;
+			var ret = p.apply(this, arguments);
+			this.__super = t;
+			return ret;
+		} : p;
+	}
 
-		constructor = function () {
-			_constructor.apply(this, arguments);
+	if (constr) {
+		var prototype,
+			_constructor = constr;
+
+		constr = function () {
+			superprop(_constructor, extend ? extend : void 0).apply(this, arguments);
+			//_constructor.apply(this, arguments);
 		};
 
 		if (extend) {
 			var F = function () {};
 
+			if (!extend.prototype){
+				extend = extend["constructor"];
+			}
+
 			/* TODO: static names ['prop'] for constructor, superconstructor, superclass */
+
 			F.prototype = extend.prototype;
-			constructor.prototype = new F();
-			constructor.prototype["constructor"] = constructor;
-			constructor.prototype["superconstructor"] = extend;
-			constructor.prototype["superclass"] = extend.prototype;
+			constr.prototype = new F();
+			constr.prototype["constructor"] = constr;
+			/*constructor.prototype["superconstructor"] = extend;
+			constructor.prototype["superclass"] = extend.prototype;*/
 		}
 
-		prototype = constructor.prototype;
+		prototype = constr.prototype;
 
 		for (var objectProp in object) {
 			if (object.hasOwnProperty(objectProp) && objectProp != 'constructor' && objectProp != 'statics') {
-				prototype[objectProp] = object[objectProp];
+				prototype[objectProp] = superprop(object[objectProp], extend ? extend.prototype[objectProp] : void 0);
 			}
 		}
 
-		if (constructor.prototype["singleton"] && !constructor.prototype.hasOwnProperty("abstract")) {
-			constructor = new constructor();
+		if (constr.prototype["singleton"] && !constr.prototype.hasOwnProperty("abstract")) {
+			constr = new constr();
 		}
 	}
 
@@ -54,8 +70,8 @@ Mantra['define'] = function (name, object) {
 		var subname = name[i];
 
 		if (!source[subname]) {
-			if (i == l - 1 && constructor) {
-				source[subname] = constructor;
+			if (i == l - 1 && constr) {
+				source[subname] = constr;
 			} else {
 				source[subname] = {};
 			}
@@ -65,7 +81,7 @@ Mantra['define'] = function (name, object) {
 	}
 	//}
 
-	statics = constructor ? object["statics"] : object;
+	statics = constr ? object["statics"] : object;
 	if (statics) {
 		for (var staticProp in statics) {
 			if (statics.hasOwnProperty(staticProp)) {

@@ -9,17 +9,18 @@ Mantra['define']('Mantra.gestures.Tap',
 
 		"name": "tap",
 
+		"maxDelta": 10,
+		//"minDelta": 0,
+
+		//"minDelay": 0,
+		"maxDelay": 300,
+
 		/**
 		 * @constructs
 		 */
 		constructor: function () {
-			this["superconstructor"].apply(this);
-		},
-
-		"process": function(finger, event){
-			//console.log(finger.identifier, event.type, event.fingers.length);
-			//oldc.log(finger, event);
-			oldc.log(finger, event.fingers, event.changedFingers);
+			//this["constructor"].prototype["constructor"].apply(this);
+			this.__super.apply(this);
 		}
 
 	}
