@@ -1,13 +1,13 @@
 /*global Mantra: true */
 
-Mantra['define']('Mantra.gestures.Hold',
+Mantra['define']('Mantra.gestures.LongTap',
 	/**
-	 * @lends Mantra.gestures.Hold.prototype
+	 * @lends Mantra.gestures.LongTap.prototype
 	 */
 	{
 		"extend": 'Mantra.gestures.Tap',
 
-		"name": "hold",
+		"name": "longtap",
 
 		"minDelay": 300,
 		"maxDelay": 1000,
