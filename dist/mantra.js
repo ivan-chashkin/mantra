@@ -705,10 +705,11 @@ Mantra['define']('Mantra.Gesture',
 
 			var result;
 
-			if (event["fingers"].length != this["fingers"] && finger["phase"] != Mantra.EVENT_END){
+			/*if (event["fingers"].length != this["fingers"] && finger["phase"] != Mantra.EVENT_END){
 				this._finger = this._event = null;
 				return false;
-			}
+			}*/
+
 
 			switch (finger["phase"]){
 				case Mantra.EVENT_START:
